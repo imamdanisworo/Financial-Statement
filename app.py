@@ -98,8 +98,7 @@ def main():
             df2['DS'] = df2['Date'].dt.strftime('%Y-%m-%d')
             piv = df2.set_index('DS')[ACCOUNT_FIELDS].T.astype(float) / 1e6
             piv_display = piv.applymap(fmt)
-            delete_row = pd.DataFrame([['🗑️' for _ in piv.columns]], columns=piv.columns, index=['Delete'])
-            st.dataframe(pd.concat([piv_display, delete_row]), use_container_width=True)
+            st.dataframe(piv_display, use_container_width=True)
             for d in piv.columns:
                 if st.button(f'Delete {d}', key=f'del_{d}'):
                     df2 = delete_date(st.session_state['data'], d)
