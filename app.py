@@ -5,7 +5,6 @@ import calendar
 import os
 import plotly.graph_objects as go
 
-# Define financial fields
 ACCOUNT_FIELDS = [
     'Current Asset', 'Non Current Asset', 'Total Asset',
     'Current Liabilities', 'Non Current Liabilities', 'Total Liabilities',
@@ -24,16 +23,13 @@ RATIO_FIELDS = {
     'Return on Equity (ROE)': (lambda df: df['Net Income'] / df['Equity'].replace(0, pd.NA), 'percent')
 }
 
-# Path and data folder
 csv_file = os.path.join('data', 'financial_data.csv')
 os.makedirs('data', exist_ok=True)
 
-# Formatting helpers
 fmt = lambda x: '' if pd.isna(x) else f"Rp. {int(x):,}" if float(x).is_integer() else f"Rp. {x:,.2f}"
 fmt_decimal = lambda x: '' if pd.isna(x) else f"{x:.2f}"
 fmt_percent = lambda x: '' if pd.isna(x) else f"{x*100:.2f}%"
 
-# Load Data
 def load_data():
     if os.path.exists(csv_file):
         df = pd.read_csv(csv_file)
@@ -47,7 +43,6 @@ def load_data():
         df[f] = pd.to_numeric(df[f], errors='coerce').fillna(0)
     return df
 
-# Save row
 def save_row(df, date, vals):
     ts = pd.Timestamp(date)
     if (df['Date'] == ts).any():
@@ -58,74 +53,73 @@ def save_row(df, date, vals):
     df.to_csv(csv_file, index=False)
     return df
 
-# Delete row
 def delete_date(df, date_str):
     ts = pd.Timestamp(date_str)
     df = df[df['Date'] != ts].reset_index(drop=True)
     df.to_csv(csv_file, index=False)
     return df
 
-# --- Streamlit UI ---
 st.title("📊 Financial Dashboard")
 df = load_data()
 st.session_state['data'] = df
+t1, t2, t3 = st.tabs(["📅 Input", "📂 Storage", "📊 Analysis"])
 
-# --- Input Section ---
-st.header("📅 Input Financial Data")
-with st.form("input_form", clear_on_submit=True):
-    today = datetime.date.today()
-    year = st.selectbox("Year", list(range(2000, today.year + 2)), index=list(range(2000, today.year + 2)).index(today.year))
-    month = st.selectbox("Month", list(calendar.month_name)[1:], index=today.month - 1)
-    inputs = [st.number_input(f, value=0.0, format="%.2f") for f in ACCOUNT_FIELDS]
-    if st.form_submit_button("Save"):
-        last_day = calendar.monthrange(year, list(calendar.month_name)[1:].index(month) + 1)[1]
-        date = datetime.date(year, list(calendar.month_name)[1:].index(month) + 1, last_day)
-        df = save_row(df, date, inputs)
-        st.session_state['data'] = df
-
-# --- Stored Data Section ---
-st.header("📂 Stored Financial Data (in Millions)")
-df_sorted = df.sort_values("Date")
-if df_sorted.empty:
-    st.info("No data available.")
-else:
-    df_sorted['Label'] = df_sorted['Date'].dt.strftime('%b %Y')
-    display_df = df_sorted.set_index('Label')[ACCOUNT_FIELDS].T / 1e6
-    st.dataframe(display_df.applymap(fmt), use_container_width=True)
-    for d in display_df.columns:
-        if st.button(f"Delete {d}", key=d):
-            df = delete_date(df, pd.to_datetime(d))
+with t1:
+    st.header("Input Financial Data")
+    with st.form("input_form", clear_on_submit=True):
+        today = datetime.date.today()
+        year = st.selectbox("Year", list(range(2000, today.year + 2)), index=list(range(2000, today.year + 2)).index(today.year))
+        month = st.selectbox("Month", list(calendar.month_name)[1:], index=today.month - 1)
+        inputs = [st.number_input(f, value=0.0, format="%.2f") for f in ACCOUNT_FIELDS]
+        if st.form_submit_button("Save"):
+            last_day = calendar.monthrange(year, list(calendar.month_name)[1:].index(month) + 1)[1]
+            date = datetime.date(year, list(calendar.month_name)[1:].index(month) + 1, last_day)
+            df = save_row(df, date, inputs)
             st.session_state['data'] = df
-            st.experimental_rerun()
 
-# --- Analysis Section ---
-st.header("📈 Financial Ratios and Charts")
-if df_sorted.empty:
-    st.info("No data to analyze.")
-else:
-    df_sorted['Label'] = df_sorted['Date'].dt.strftime('%b %Y')
-    df_sorted.set_index('Label', inplace=True)
+with t2:
+    st.header("Stored Financial Data (in Millions)")
+    df_sorted = df.sort_values("Date")
+    if df_sorted.empty:
+        st.info("No data available.")
+    else:
+        df_sorted['Label'] = df_sorted['Date'].dt.strftime('%b %Y')
+        display_df = df_sorted.set_index('Label')[ACCOUNT_FIELDS].T / 1e6
+        st.dataframe(display_df.applymap(fmt), use_container_width=True)
+        for d in display_df.columns:
+            if st.button(f"Delete {d}", key=d):
+                df = delete_date(df, pd.to_datetime(d))
+                st.session_state['data'] = df
+                st.experimental_rerun()
 
-    selected = st.multiselect("Select Fields to Plot", ACCOUNT_FIELDS, default=['Revenue', 'Net Income'])
-    if selected:
-        fig = go.Figure()
-        for f in selected:
-            fig.add_trace(go.Scatter(x=df_sorted.index, y=df_sorted[f] / 1e6, mode='lines+markers', name=f))
-        fig.update_layout(
-            title="Financial Trends",
-            xaxis_title="Month-Year",
-            yaxis_title="Amount (in Millions)",
-            legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center")
-        )
-        st.plotly_chart(fig, use_container_width=True)
-        summary_table = (df_sorted[selected].T / 1e6).applymap(fmt)
-        st.dataframe(summary_table, use_container_width=True)
+with t3:
+    st.header("Financial Analysis")
+    if df.empty:
+        st.info("No data to analyze.")
+    else:
+        df['Label'] = df['Date'].dt.strftime('%b %Y')
+        df.set_index('Label', inplace=True)
 
-    st.subheader("📊 Financial Ratios")
-    ratio_df = pd.DataFrame(index=df_sorted.index)
-    for name, (func, _) in RATIO_FIELDS.items():
-        ratio_df[name] = func(df_sorted)
-    ratio_table = ratio_df.T
-    for name, (_, t) in RATIO_FIELDS.items():
-        ratio_table.loc[name] = ratio_table.loc[name].map(fmt_percent if t == 'percent' else fmt_decimal)
-    st.dataframe(ratio_table, use_container_width=True)
+        selected = st.multiselect("Select Fields to Plot", ACCOUNT_FIELDS, default=['Revenue', 'Net Income'])
+        if selected:
+            fig = go.Figure()
+            for f in selected:
+                fig.add_trace(go.Scatter(x=df.index, y=df[f] / 1e6, mode='lines+markers', name=f))
+            fig.update_layout(
+                title="Financial Trends",
+                xaxis_title="Month-Year",
+                yaxis_title="Amount (in Millions)",
+                legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center")
+            )
+            st.plotly_chart(fig, use_container_width=True)
+            summary_table = (df[selected].T / 1e6).applymap(fmt)
+            st.dataframe(summary_table, use_container_width=True)
+
+        st.subheader("📊 Financial Ratios")
+        ratio_df = pd.DataFrame(index=df.index)
+        for name, (func, _) in RATIO_FIELDS.items():
+            ratio_df[name] = func(df)
+        ratio_table = ratio_df.T
+        for name, (_, t) in RATIO_FIELDS.items():
+            ratio_table.loc[name] = ratio_table.loc[name].map(fmt_percent if t == 'percent' else fmt_decimal)
+        st.dataframe(ratio_table, use_container_width=True)
