@@ -79,32 +79,8 @@ def main():
             mo = st.selectbox('Month', mos, index=today.month - 1)
             vals = []
 
-            with st.expander("Assets"):
-                cols = st.columns(2)
-                vals.append(cols[0].number_input('Current Asset', value=0.0, format="%.2f"))
-                vals.append(cols[1].number_input('Non Current Asset', value=0.0, format="%.2f"))
-                vals.append(st.number_input('Total Asset', value=0.0, format="%.2f"))
-
-            with st.expander("Liabilities"):
-                cols = st.columns(2)
-                vals.append(cols[0].number_input('Current Liabilities', value=0.0, format="%.2f"))
-                vals.append(cols[1].number_input('Non Current Liabilities', value=0.0, format="%.2f"))
-                vals.append(st.number_input('Total Liabilities', value=0.0, format="%.2f"))
-
-            with st.expander("Equity"):
-                vals.append(st.number_input('Equity', value=0.0, format="%.2f"))
-
-            with st.expander("Income"):
-                vals.append(st.number_input('Revenue', value=0.0, format="%.2f"))
-                vals.append(st.number_input('Operating Income', value=0.0, format="%.2f"))
-                vals.append(st.number_input('Other Income and Expense', value=0.0, format="%.2f"))
-                vals.append(st.number_input('Net Income', value=0.0, format="%.2f"))
-                vals.append(st.number_input('Tax', value=0.0, format="%.2f"))
-                vals.append(st.number_input('Income After Tax', value=0.0, format="%.2f"))
-
-            with st.expander("Expenses"):
-                for f in ['Administration Exp', 'Employee Expense', 'Marketing Expense', 'Rent Expense', 'Right of Use Assets Expense', 'Depreciation Expense', 'Total Operating Exp.']:
-                    vals.append(st.number_input(f, format="%.2f", value=0.0))
+            for f in ACCOUNT_FIELDS:
+                vals.append(st.number_input(f, value=0.0, format="%.2f"))
 
             if st.form_submit_button('Save Data'):
                 day = calendar.monthrange(yr, mos.index(mo) + 1)[1]
@@ -114,7 +90,7 @@ def main():
                 st.success(f"Data for {mo} {yr} saved successfully.")
 
     with t2:
-        st.header('Stored Financial Data')
+        st.header('Stored Financial Data (in Millions)')
         df2 = st.session_state['data'].sort_values('Date')
         if df2.empty:
             st.info('No data available.')
