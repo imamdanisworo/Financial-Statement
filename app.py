@@ -5,25 +5,44 @@ import calendar
 import os
 import plotly.graph_objects as go
 
-# --- Sticky tab bar floated to right CSS ---
+# --- Floating Right-side Navigation Buttons ---
 st.markdown(
-    '''<style>
-    .main > div {
-        display: flex;
-        flex-direction: row-reverse;
-    }
-    div[role="tablist"] {
-        position: sticky;
-        top: 0;
+    '''
+    <style>
+    .floating-tabs {
+        position: fixed;
+        top: 50%;
+        right: 0;
+        transform: translateY(-50%);
         z-index: 1000;
         background-color: white;
-        width: 200px;
-        align-self: flex-start;
-        margin-left: auto;
-        border-left: 1px solid #eee;
-        padding-left: 1rem;
+        border: 1px solid #ddd;
+        border-right: none;
+        box-shadow: -2px 2px 5px rgba(0,0,0,0.1);
     }
-    </style>''', unsafe_allow_html=True)
+    .floating-tabs button {
+        display: block;
+        width: 100%;
+        border: none;
+        background: white;
+        padding: 10px 15px;
+        text-align: left;
+        font-size: 14px;
+        cursor: pointer;
+        border-bottom: 1px solid #eee;
+    }
+    .floating-tabs button:hover {
+        background-color: #f5f5f5;
+    }
+    </style>
+    <div class="floating-tabs">
+        <button onclick="window.location.hash='📅 Input'">📅 Input</button>
+        <button onclick="window.location.hash='📂 Storage'">📂 Storage</button>
+        <button onclick="window.location.hash='📊 Analysis'">📊 Analysis</button>
+    </div>
+    ''',
+    unsafe_allow_html=True
+)
 
 # Account fields
 years = list(range(2000, datetime.date.today().year + 2))
@@ -90,7 +109,7 @@ def main():
     t1, t2, t3 = st.tabs(['📅 Input', '📂 Storage', '📊 Analysis'])
 
     with t1:
-        st.header('Input Financial Data')
+        st.header('📅 Input Financial Data')
         with st.form('f1', clear_on_submit=True):
             today = datetime.date.today()
             yr = st.selectbox('Year', years, index=years.index(today.year))
@@ -104,7 +123,7 @@ def main():
                 st.session_state['data'] = df
 
     with t2:
-        st.header('Stored Financial Data (in Millions)')
+        st.header('📂 Stored Financial Data (in Millions)')
         df2 = st.session_state['data'].sort_values('Date')
         if df2.empty:
             st.info('No data available.')
@@ -120,7 +139,7 @@ def main():
                     st.success(f"Deleted entry for {d}.")
 
     with t3:
-        st.header('Data Analysis')
+        st.header('📊 Financial Data Analysis')
         df3 = st.session_state['data'].sort_values('Date')
         if df3.empty:
             st.info('No data available.')
