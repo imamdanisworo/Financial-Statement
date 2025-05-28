@@ -38,7 +38,7 @@ if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
 # Format helpers
-fmt = lambda x: '' if pd.isna(x) else (f"{int(x):,}" if float(x).is_integer() else f"{x:,.2f}")
+fmt = lambda x: '' if pd.isna(x) else f"Rp. {int(x):,}" if float(x).is_integer() else f"Rp. {x:,.2f}"
 fmt_decimal = lambda x: '' if pd.isna(x) else f"{x:.2f}"
 fmt_percent = lambda x: '' if pd.isna(x) else f"{x*100:.2f}%"
 
@@ -91,7 +91,9 @@ def main():
             vals = []
 
             for f in ACCOUNT_FIELDS:
-                vals.append(st.number_input(f, value=0.0, format="%.2f"))
+                val = st.number_input(f, value=0.0, format="%.2f")
+                st.caption(f"↳ {fmt(val)}")
+                vals.append(val)
 
             if st.form_submit_button('Save Data'):
                 day = calendar.monthrange(yr, mos.index(mo) + 1)[1]
