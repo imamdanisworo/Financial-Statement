@@ -22,13 +22,13 @@ ACCOUNT_FIELDS = [
     'Other Income and Expense', 'Net Income', 'Tax', 'Income After Tax'
 ]
 
-# Financial ratios (added for analysis)
+# Financial ratios with formatting type
 RATIO_FIELDS = {
-    'Current Ratio': lambda df: df['Current Asset'] / df['Current Liabilities'].replace(0, pd.NA),
-    'Debt to Equity Ratio': lambda df: df['Total Liabilities'] / df['Equity'].replace(0, pd.NA),
-    'Net Profit Margin': lambda df: df['Net Income'] / df['Revenue'].replace(0, pd.NA),
-    'Return on Assets (ROA)': lambda df: df['Net Income'] / df['Total Asset'].replace(0, pd.NA),
-    'Return on Equity (ROE)': lambda df: df['Net Income'] / df['Equity'].replace(0, pd.NA)
+    'Current Ratio': (lambda df: df['Current Asset'] / df['Current Liabilities'].replace(0, pd.NA), 'decimal'),
+    'Debt to Equity Ratio': (lambda df: df['Total Liabilities'] / df['Equity'].replace(0, pd.NA), 'decimal'),
+    'Net Profit Margin': (lambda df: df['Net Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
+    'Return on Assets (ROA)': (lambda df: df['Net Income'] / df['Total Asset'].replace(0, pd.NA), 'percent'),
+    'Return on Equity (ROE)': (lambda df: df['Net Income'] / df['Equity'].replace(0, pd.NA), 'percent')
 }
 
 # Paths
@@ -37,8 +37,10 @@ csv_file = os.path.join(data_dir, 'financial_data.csv')
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
-# Format helper
+# Format helpers
 fmt = lambda x: '' if pd.isna(x) else (f"{int(x):,}" if float(x).is_integer() else f"{x:,.2f}")
+fmt_decimal = lambda x: '' if pd.isna(x) else f"{x:.2f}"
+fmt_percent = lambda x: '' if pd.isna(x) else f"{x*100:.2f}%"
 
 # Load data
 def load_data():
@@ -139,10 +141,18 @@ def main():
 
             series = st.multiselect('Select Series to Analyze', ACCOUNT_FIELDS, ACCOUNT_FIELDS)
             if series:
+                st.subheader('Trend Chart (in Millions)')
                 fig = go.Figure()
                 for f in series:
                     fig.add_trace(go.Scatter(x=sel.index, y=sel[f] / 1e6, mode='lines+markers', name=f))
-                fig.update_layout(xaxis_title='Month-Year', yaxis_title='Amount (Million)', title='Trend Over Time')
+                fig.update_layout(
+                    title='Financial Series Trend',
+                    xaxis_title='Month-Year',
+                    yaxis_title='Amount (in Millions)',
+                    margin=dict(l=40, r=40, t=60, b=40),
+                    height=400,
+                    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+                )
                 fig.update_yaxes(tickformat=',.0f', autorange=True)
                 st.plotly_chart(fig, use_container_width=True)
 
@@ -150,11 +160,17 @@ def main():
                 table = (sel[series].T / 1e6).applymap(fmt)
                 st.dataframe(table, use_container_width=True, height=int(32 * (len(table.index) + 1)))
 
-            st.subheader('Financial Ratios')
+            st.subheader('Financial Ratios (Vertical View)')
             ratio_df = pd.DataFrame(index=sel.index)
-            for name, func in RATIO_FIELDS.items():
+            for name, (func, _) in RATIO_FIELDS.items():
                 ratio_df[name] = func(sel)
-            st.dataframe(ratio_df.applymap(fmt), use_container_width=True, height=int(32 * (len(ratio_df.index) + 1)))
+            ratio_table = pd.DataFrame(index=RATIO_FIELDS.keys(), columns=ratio_df.columns)
+            for name, (_, ftype) in RATIO_FIELDS.items():
+                if ftype == 'percent':
+                    ratio_table.loc[name] = ratio_df.loc[name].map(fmt_percent)
+                else:
+                    ratio_table.loc[name] = ratio_df.loc[name].map(fmt_decimal)
+            st.dataframe(ratio_table, use_container_width=True, height=int(32 * (len(ratio_table.index) + 1)))
 
 if __name__ == '__main__':
     main()
