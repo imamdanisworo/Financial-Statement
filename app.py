@@ -49,7 +49,8 @@ def delete_date(df,date_str):
     df.to_csv(csv_file,index=False); return df
 
 # Format
- fmt=lambda x: '' if pd.isna(x) else f"{x:,.0f}" if float(x).is_integer() else f"{x:,.2f}"
+# Format helper
+fmt = lambda x: '' if pd.isna(x) else (f"{int(x):,}" if float(x).is_integer() else f"{x:,.2f}")
 
 # Main
  def main():
