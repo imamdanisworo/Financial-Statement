@@ -22,6 +22,15 @@ ACCOUNT_FIELDS = [
     'Other Income and Expense', 'Net Income', 'Tax', 'Income After Tax'
 ]
 
+# Financial ratios (added for analysis)
+RATIO_FIELDS = {
+    'Current Ratio': lambda df: df['Current Asset'] / df['Current Liabilities'].replace(0, pd.NA),
+    'Debt to Equity Ratio': lambda df: df['Total Liabilities'] / df['Equity'].replace(0, pd.NA),
+    'Net Profit Margin': lambda df: df['Net Income'] / df['Revenue'].replace(0, pd.NA),
+    'Return on Assets (ROA)': lambda df: df['Net Income'] / df['Total Asset'].replace(0, pd.NA),
+    'Return on Equity (ROE)': lambda df: df['Net Income'] / df['Equity'].replace(0, pd.NA)
+}
+
 # Paths
 data_dir = 'data'
 csv_file = os.path.join(data_dir, 'financial_data.csv')
@@ -139,7 +148,13 @@ def main():
 
                 st.subheader('Summary Table (in Millions)')
                 table = (sel[series].T / 1e6).applymap(fmt)
-                st.dataframe(table, use_container_width=True)
+                st.dataframe(table, use_container_width=True, height=int(32 * (len(table.index) + 1)))
+
+            st.subheader('Financial Ratios')
+            ratio_df = pd.DataFrame(index=sel.index)
+            for name, func in RATIO_FIELDS.items():
+                ratio_df[name] = func(sel)
+            st.dataframe(ratio_df.applymap(fmt), use_container_width=True, height=int(32 * (len(ratio_df.index) + 1)))
 
 if __name__ == '__main__':
     main()
