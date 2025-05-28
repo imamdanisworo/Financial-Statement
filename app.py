@@ -112,7 +112,7 @@ with t3:
                     hovertemplate=f"%{{x}}<br>{f}: Rp. %{{y:,.0f}} Mio<extra></extra>"
                 ))
             fig.update_layout(
-                title="Financial Trends",
+                title="Financial Trends(in Millions)",
                 xaxis_title="Month-Year",
                 yaxis=dict(tickformat=",.0f", tickprefix="Rp. "),
                 legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center")
