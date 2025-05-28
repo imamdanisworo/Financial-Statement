@@ -138,8 +138,8 @@ def main():
                     xaxis_title='Month-Year',
                     yaxis_title='Amount (in Millions)',
                     height=400,
-                    legend=dict(orientation='v', yanchor='top', y=1, xanchor='right', x=1)
-                )
+                    legend=dict(orientation='h', yanchor='bottom', y=-0.3, xanchor='center', x=0.5)
+
                 fig.update_yaxes(tickformat=',.0f')
                 st.plotly_chart(fig, use_container_width=True)
                 table = (sel[series].T / 1e6).applymap(fmt)
