@@ -28,6 +28,9 @@ csv_file = os.path.join(data_dir, 'financial_data.csv')
 if not os.path.exists(data_dir):
     os.makedirs(data_dir)
 
+# Format helper
+fmt = lambda x: '' if pd.isna(x) else (f"{int(x):,}" if float(x).is_integer() else f"{x:,.2f}")
+
 # Load data
 def load_data():
     if os.path.exists(csv_file):
@@ -61,50 +64,67 @@ def delete_date(df, date_str):
     df.to_csv(csv_file, index=False)
     return df
 
-# Format helper
-fmt = lambda x: '' if pd.isna(x) else (f"{int(x):,}" if float(x).is_integer() else f"{x:,.2f}")
-
 # Main app
 def main():
     df = load_data()
     st.session_state['data'] = df
-    t1, t2, t3 = st.tabs(['Input', 'Storage', 'Analysis'])
+    t1, t2, t3 = st.tabs(['📅 Input', '📂 Storage', '📊 Analysis'])
 
     with t1:
-        st.header('Input Data')
+        st.header('Input Financial Data')
         with st.form('f1', clear_on_submit=True):
             today = datetime.date.today()
             yr = st.selectbox('Year', years, index=years.index(today.year))
             mos = list(calendar.month_name)[1:]
             mo = st.selectbox('Month', mos, index=today.month - 1)
-            vals = [st.number_input(f, format="%.2f", value=0.0) for f in ACCOUNT_FIELDS]
-            if st.form_submit_button('Add'):
+            vals = []
+
+            with st.expander("Assets"):
+                cols = st.columns(2)
+                vals.append(cols[0].number_input('Current Asset', value=0.0, format="%.2f"))
+                vals.append(cols[1].number_input('Non Current Asset', value=0.0, format="%.2f"))
+                vals.append(st.number_input('Total Asset', value=0.0, format="%.2f"))
+
+            with st.expander("Liabilities"):
+                cols = st.columns(2)
+                vals.append(cols[0].number_input('Current Liabilities', value=0.0, format="%.2f"))
+                vals.append(cols[1].number_input('Non Current Liabilities', value=0.0, format="%.2f"))
+                vals.append(st.number_input('Total Liabilities', value=0.0, format="%.2f"))
+
+            with st.expander("Equity & Income"):
+                for f in ACCOUNT_FIELDS[6:]:
+                    vals.append(st.number_input(f, format="%.2f", value=0.0))
+
+            if st.form_submit_button('Save Data'):
                 day = calendar.monthrange(yr, mos.index(mo) + 1)[1]
                 date = datetime.date(yr, mos.index(mo) + 1, day)
                 df = save_row(st.session_state['data'], date, vals)
                 st.session_state['data'] = df
-                st.success('Saved')
+                st.success(f"Data for {mo} {yr} saved successfully.")
 
     with t2:
-        st.header('Stored Data')
+        st.header('Stored Financial Data')
         df2 = st.session_state['data'].sort_values('Date')
         if df2.empty:
-            st.info('No data')
+            st.info('No data available.')
         else:
             df2['DS'] = df2['Date'].dt.strftime('%Y-%m-%d')
-            piv = df2.set_index('DS')[ACCOUNT_FIELDS].T.astype(float)
-            st.dataframe(piv, use_container_width=True)
+            piv = df2.set_index('DS')[ACCOUNT_FIELDS].T.astype(float) / 1e6
+            piv_display = piv.applymap(fmt)
+            st.dataframe(piv_display, use_container_width=True)
             for d in piv.columns:
-                if st.button(f'Del {d}'):
+                col1, col2 = st.columns([6, 1])
+                col1.markdown(f"**{d}**")
+                if col2.button('🗑️', key=f'del_{d}'):
                     df2 = delete_date(st.session_state['data'], d)
                     st.session_state['data'] = df2
-                    st.success('Deleted')
+                    st.success(f"Deleted entry for {d}.")
 
     with t3:
-        st.header('Analysis')
+        st.header('Data Analysis')
         df3 = st.session_state['data'].sort_values('Date')
         if df3.empty:
-            st.info('No data')
+            st.info('No data available.')
         else:
             yrs = sorted(df3['Date'].dt.year.unique())
             mos = list(calendar.month_name)[1:]
@@ -121,24 +141,18 @@ def main():
             sel['MY'] = sel['Date'].dt.strftime('%b %Y')
             sel.set_index('MY', inplace=True)
 
-            # Plot
-            series = st.multiselect('Series', ACCOUNT_FIELDS, ACCOUNT_FIELDS)
+            series = st.multiselect('Select Series to Analyze', ACCOUNT_FIELDS, ACCOUNT_FIELDS)
             if series:
                 fig = go.Figure()
                 for f in series:
                     fig.add_trace(go.Scatter(x=sel.index, y=sel[f] / 1e6, mode='lines+markers', name=f))
-                fig.update_layout(xaxis_title='Month-Year', yaxis_title='Amount (Million)')
+                fig.update_layout(xaxis_title='Month-Year', yaxis_title='Amount (Million)', title='Trend Over Time')
                 fig.update_yaxes(tickformat=',.0f', autorange=True)
                 st.plotly_chart(fig, use_container_width=True)
 
-            # Data Table
-            st.subheader('Data Table')
-            table = sel[series].T
-            table.columns = sel.index
-            table_display = table.applymap(fmt)
-            st.dataframe(table_display, use_container_width=True)
+                st.subheader('Summary Table (in Millions)')
+                table = (sel[series].T / 1e6).applymap(fmt)
+                st.dataframe(table, use_container_width=True)
 
-
-# Ensure script runs
 if __name__ == '__main__':
     main()
