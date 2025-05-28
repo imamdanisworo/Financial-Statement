@@ -11,14 +11,28 @@ st.markdown(
     div[role="tablist"] { position: sticky; top: 0; z-index: 1000; background-color: white; }
     </style>''', unsafe_allow_html=True)
 
-# Define account fields including Depreciation Expense before Right of Use Assets Expense
+# Define account fields (Depreciation Expense now below Right of Use Assets Expense)
 ACCOUNT_FIELDS = [
-    'Current Asset', 'Non Current Asset', 'Total Asset',
-    'Current Liabilities', 'Non Current Liabilities', 'Total Liabilities',
-    'Equity', 'Revenue', 'Administration Exp', 'Employee Expense',
-    'Marketing Expense', 'Rent Expense', 'Depreciation Expense',
-    'Right of Use Assets Expense', 'Total Operating Exp.', 'Operating Income',
-    'Other Income and Expense', 'Net Income', 'Tax', 'Income After Tax'
+    'Current Asset',
+    'Non Current Asset',
+    'Total Asset',
+    'Current Liabilities',
+    'Non Current Liabilities',
+    'Total Liabilities',
+    'Equity',
+    'Revenue',
+    'Administration Exp',
+    'Employee Expense',
+    'Marketing Expense',
+    'Rent Expense',
+    'Right of Use Assets Expense',  # Moved above Depreciation
+    'Depreciation Expense',        # Now placed below Right of Use Assets Expense
+    'Total Operating Exp.',
+    'Operating Income',
+    'Other Income and Expense',
+    'Net Income',
+    'Tax',
+    'Income After Tax'
 ]
 
 # Data directory & file
@@ -79,7 +93,6 @@ def main():
     with tab1:
         st.header('Input Monthly Financial Data')
         with st.form('input_form', clear_on_submit=True):
-            # Year and Month selectors
             current_year = datetime.date.today().year
             years = list(range(2000, current_year + 2))
             year = st.selectbox('Year', years, index=years.index(current_year))
@@ -88,8 +101,7 @@ def main():
             month_idx = months.index(month) + 1
             # Account inputs
             inputs = [st.number_input(field, value=0.0, format='%.2f') for field in ACCOUNT_FIELDS]
-            submitted = st.form_submit_button('Add')
-            if submitted:
+            if st.form_submit_button('Add'):
                 last_day = calendar.monthrange(year, month_idx)[1]
                 date = datetime.date(year, month_idx, last_day)
                 df = save_row(st.session_state['data'], date, inputs)
@@ -110,7 +122,7 @@ def main():
             cols = st.columns(len(piv.columns))
             for i, d in enumerate(piv.columns):
                 with cols[i]:
-                    if st.button('???', key=f'del_{d}', help=f'Delete {d}'):
+                    if st.button('🗑️', key=f'del_{d}', help=f'Delete {d}'):
                         df = delete_date(st.session_state['data'], d)
                         st.session_state['data'] = df
                         st.success(f'Deleted data for {d}')
@@ -159,9 +171,7 @@ def main():
                 st.subheader('Raw Data Table')
                 st.dataframe(df_raw, use_container_width=True)
 
-            # Brokerage Ratios
-            st.subheader('Brokerage Ratios')
-            R = sel.copy()
+            # Brokerage Ratios\            R = sel.copy()
             R['Liquidity Ratio'] = R['Current Asset'] / R['Current Liabilities']
             R['Leverage Ratio'] = R['Total Asset'] / R['Equity']
             R['Operating Margin (%)'] = R['Operating Income'] / R['Revenue'] * 100
