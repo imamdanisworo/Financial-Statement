@@ -93,6 +93,7 @@ def main():
     with t2:
         st.header('Stored Financial Data (in Millions)')
         df2 = st.session_state['data'].sort_values('Date')
+...
         if df2.empty:
             st.info('No data available.')
         else:
@@ -101,11 +102,8 @@ def main():
             piv_display = piv.applymap(fmt)
             delete_row = pd.DataFrame([['🗑️' for _ in piv.columns]], columns=piv.columns, index=['Delete'])
             st.dataframe(pd.concat([piv_display, delete_row]), use_container_width=True)
-            for d in piv.columns:
-                if st.button(f'Delete {d}', key=f'del_{d}'):
-                    df2 = delete_date(st.session_state['data'], d)
-                    st.session_state['data'] = df2
-                    st.success(f"Deleted entry for {d}.")
+            # Remove external delete buttons
+
 
     with t3:
         st.header('Data Analysis')
