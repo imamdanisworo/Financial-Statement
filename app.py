@@ -70,20 +70,20 @@ def main():
     st.session_state['data'] = df
     t1, t2, t3 = st.tabs(['Input', 'Storage', 'Analysis'])
 
-with t1:
-    st.header('Input Data')
-    with st.form('f1', clear_on_submit=True):
-        today = datetime.date.today()
-        yr = st.selectbox('Year', years, index=years.index(today.year))
-        mos = list(calendar.month_name)[1:]
-        mo = st.selectbox('Month', mos, index=today.month - 1)
-        vals = [st.number_input(f, format="%.2f", value=0.0) for f in ACCOUNT_FIELDS]
-        if st.form_submit_button('Add'):
-            day = calendar.monthrange(yr, mos.index(mo) + 1)[1]
-            date = datetime.date(yr, mos.index(mo) + 1, day)
-            df = save_row(st.session_state['data'], date, vals)
-            st.session_state['data'] = df
-            st.success('Saved')
+    with t1:
+        st.header('Input Data')
+        with st.form('f1', clear_on_submit=True):
+            today = datetime.date.today()
+            yr = st.selectbox('Year', years, index=years.index(today.year))
+            mos = list(calendar.month_name)[1:]
+            mo = st.selectbox('Month', mos, index=today.month - 1)
+            vals = [st.number_input(f, format="%.2f", value=0.0) for f in ACCOUNT_FIELDS]
+            if st.form_submit_button('Add'):
+                day = calendar.monthrange(yr, mos.index(mo) + 1)[1]
+                date = datetime.date(yr, mos.index(mo) + 1, day)
+                df = save_row(st.session_state['data'], date, vals)
+                st.session_state['data'] = df
+                st.success('Saved')
 
     with t2:
         st.header('Stored Data')
@@ -131,12 +131,14 @@ with t1:
                 fig.update_yaxes(tickformat=',.0f', autorange=True)
                 st.plotly_chart(fig, use_container_width=True)
 
-            # Vertical table
+            # Data Table
             st.subheader('Data Table')
             table = sel[series].T
             table.columns = sel.index
             table_display = table.applymap(fmt)
             st.dataframe(table_display, use_container_width=True)
 
+
+# Ensure script runs
 if __name__ == '__main__':
     main()
