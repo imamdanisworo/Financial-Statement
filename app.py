@@ -114,12 +114,10 @@ def main():
             piv_display = piv.applymap(fmt)
             st.dataframe(piv_display, use_container_width=True)
             for d in piv.columns:
-                col1, col2 = st.columns([6, 1])
-                col1.markdown(f"**{d}**")
-                if col2.button('🗑️', key=f'del_{d}'):
-                    df2 = delete_date(st.session_state['data'], d)
-                    st.session_state['data'] = df2
-                    st.success(f"Deleted entry for {d}.")
+    if st.button(f'🗑️ Delete {d}', key=f'del_{d}'):
+        df2 = delete_date(st.session_state['data'], d)
+        st.session_state['data'] = df2
+        st.success(f"Deleted entry for {d}.")
 
     with t3:
         st.header('Data Analysis')
@@ -154,7 +152,7 @@ def main():
                     yaxis_title='Amount (in Millions)',
                     margin=dict(l=40, r=40, t=60, b=40),
                     height=400,
-                    legend=dict(orientation='h', yanchor='bottom', y=1.02, xanchor='right', x=1)
+                    legend=dict(orientation='v', yanchor='top', y=1, xanchor='right', x=1)
                 )
                 fig.update_yaxes(tickformat=',.0f', autorange=True)
                 st.plotly_chart(fig, use_container_width=True)
@@ -163,7 +161,7 @@ def main():
                 table = (sel[series].T / 1e6).applymap(fmt)
                 st.dataframe(table, use_container_width=True, height=int(32 * (len(table.index) + 1)))
 
-            st.subheader('Financial Ratios (Vertical View)')
+            st.subheader('Financial Ratios')
             ratio_df = pd.DataFrame(index=sel.index)
             for name, (func, _) in RATIO_FIELDS.items():
                 ratio_df[name] = func(sel)
