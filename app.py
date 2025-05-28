@@ -113,11 +113,11 @@ def main():
             piv = df2.set_index('DS')[ACCOUNT_FIELDS].T.astype(float) / 1e6
             piv_display = piv.applymap(fmt)
 
-            # Prepare buttons row for deletion
             delete_row = pd.DataFrame([['🗑️' for _ in piv.columns]], columns=piv.columns, index=['Delete'])
             full_display = pd.concat([piv_display, delete_row])
             st.dataframe(full_display, use_container_width=True)
-                        for d in piv.columns:
+
+            for d in piv.columns:
                 if st.button(f'🗑️ Delete {d}', key=f'del_{d}'):
                     df2 = delete_date(st.session_state['data'], d)
                     st.session_state['data'] = df2
@@ -165,7 +165,7 @@ def main():
                 table = (sel[series].T / 1e6).applymap(fmt)
                 st.dataframe(table, use_container_width=True, height=int(32 * (len(table.index) + 1)))
 
-            st.subheader('Financial Ratios')
+            st.subheader('Financial Ratios (Vertical View)')
             ratio_df = pd.DataFrame(index=sel.index)
             for name, (func, _) in RATIO_FIELDS.items():
                 ratio_df[name] = func(sel)
