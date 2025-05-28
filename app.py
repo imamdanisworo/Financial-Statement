@@ -117,8 +117,7 @@ def main():
             delete_row = pd.DataFrame([['🗑️' for _ in piv.columns]], columns=piv.columns, index=['Delete'])
             full_display = pd.concat([piv_display, delete_row])
             st.dataframe(full_display, use_container_width=True)
-            st.dataframe(piv_display, use_container_width=True)
-            for d in piv.columns:
+                        for d in piv.columns:
                 if st.button(f'🗑️ Delete {d}', key=f'del_{d}'):
                     df2 = delete_date(st.session_state['data'], d)
                     st.session_state['data'] = df2
