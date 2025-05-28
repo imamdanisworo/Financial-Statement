@@ -104,11 +104,17 @@ with t3:
         if selected:
             fig = go.Figure()
             for f in selected:
-                fig.add_trace(go.Scatter(x=df.index, y=df[f] / 1e6, mode='lines+markers', name=f))
+                fig.add_trace(go.Scatter(
+                    x=df.index,
+                    y=df[f] / 1e6,
+                    mode='lines+markers',
+                    name=f,
+                    hovertemplate=f"%{{x}}<br>{f}: Rp. %{{y:,.0f}} Mio<extra></extra>"
+                ))
             fig.update_layout(
                 title="Financial Trends",
                 xaxis_title="Month-Year",
-                yaxis_title="Amount (in Millions)",
+                yaxis=dict(tickformat=",.0f", tickprefix="Rp. "),
                 legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center")
             )
             st.plotly_chart(fig, use_container_width=True)
