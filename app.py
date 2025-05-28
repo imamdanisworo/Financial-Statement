@@ -95,7 +95,7 @@ def main():
         if df2.empty:
             st.info('No data available.')
         else:
-            df2['DS'] = df2['Date'].dt.strftime('%Y-%m-%d')
+            df2['DS'] = df2['Date'].dt.strftime('%b %Y')
             piv = df2.set_index('DS')[ACCOUNT_FIELDS].T.astype(float) / 1e6
             piv_display = piv.applymap(fmt)
             st.dataframe(piv_display, use_container_width=True)
