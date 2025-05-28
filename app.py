@@ -91,8 +91,19 @@ def main():
                 vals.append(cols[1].number_input('Non Current Liabilities', value=0.0, format="%.2f"))
                 vals.append(st.number_input('Total Liabilities', value=0.0, format="%.2f"))
 
-            with st.expander("Equity & Income"):
-                for f in ACCOUNT_FIELDS[6:]:
+            with st.expander("Equity"):
+                vals.append(st.number_input('Equity', value=0.0, format="%.2f"))
+
+            with st.expander("Income"):
+                vals.append(st.number_input('Revenue', value=0.0, format="%.2f"))
+                vals.append(st.number_input('Operating Income', value=0.0, format="%.2f"))
+                vals.append(st.number_input('Other Income and Expense', value=0.0, format="%.2f"))
+                vals.append(st.number_input('Net Income', value=0.0, format="%.2f"))
+                vals.append(st.number_input('Tax', value=0.0, format="%.2f"))
+                vals.append(st.number_input('Income After Tax', value=0.0, format="%.2f"))
+
+            with st.expander("Expenses"):
+                for f in ['Administration Exp', 'Employee Expense', 'Marketing Expense', 'Rent Expense', 'Right of Use Assets Expense', 'Depreciation Expense', 'Total Operating Exp.']:
                     vals.append(st.number_input(f, format="%.2f", value=0.0))
 
             if st.form_submit_button('Save Data'):
