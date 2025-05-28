@@ -164,12 +164,14 @@ def main():
             ratio_df = pd.DataFrame(index=sel.index)
             for name, (func, _) in RATIO_FIELDS.items():
                 ratio_df[name] = func(sel)
-            ratio_table = pd.DataFrame(index=RATIO_FIELDS.keys(), columns=ratio_df.columns)
+
+            ratio_table = ratio_df.T
             for name, (_, ftype) in RATIO_FIELDS.items():
                 if ftype == 'percent':
-                    ratio_table.loc[name] = ratio_df.loc[name].map(fmt_percent)
+                    ratio_table.loc[name] = ratio_table.loc[name].map(fmt_percent)
                 else:
-                    ratio_table.loc[name] = ratio_df.loc[name].map(fmt_decimal)
+                    ratio_table.loc[name] = ratio_table.loc[name].map(fmt_decimal)
+
             st.dataframe(ratio_table, use_container_width=True, height=int(32 * (len(ratio_table.index) + 1)))
 
 if __name__ == '__main__':
