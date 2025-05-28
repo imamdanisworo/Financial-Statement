@@ -1,0 +1,6 @@
+streamlit>=1.26.0
+pandas>=2.0.0
+plotly>=5.15.0
+numpy
+python-dateutil
+pytz
