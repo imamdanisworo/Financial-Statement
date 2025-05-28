@@ -24,9 +24,10 @@ ACCOUNT_FIELDS = [
 
 # Financial ratios with formatting type
 RATIO_FIELDS = {
-    'Operating Profit Margin': (lambda df: df['Operating Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
-    'Current Ratio': (lambda df: df['Current Asset'] / df['Current Liabilities'].replace(0, pd.NA), 'decimal'),
+    'Current Ratio':     'Operating Profit Margin': (lambda df: df['Operating Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
+     (lambda df: df['Current Asset'] / df['Current Liabilities'].replace(0, pd.NA), 'decimal'),
     'Debt to Equity Ratio': (lambda df: df['Total Liabilities'] / df['Equity'].replace(0, pd.NA), 'decimal'),
+    'Operating Profit Margin': (lambda df: df['Operating Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
     'Net Profit Margin': (lambda df: df['Net Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
     'Return on Assets (ROA)': (lambda df: df['Net Income'] / df['Total Asset'].replace(0, pd.NA), 'percent'),
     'Return on Equity (ROE)': (lambda df: df['Net Income'] / df['Equity'].replace(0, pd.NA), 'percent')
