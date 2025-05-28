@@ -53,6 +53,10 @@ def delete_date(df,date_str):
 fmt = lambda x: '' if pd.isna(x) else (f"{int(x):,}" if float(x).is_integer() else f"{x:,.2f}")
 
 # Main
+# Remove stray space before def main()
+def main():
+    df=load_data(); st.session_state['data']=df
+    t1,t2,t3=st.tabs(['Input','Storage','Analysis'])
  def main():
     df=load_data(); st.session_state['data']=df
     t1,t2,t3=st.tabs(['Input','Storage','Analysis'])
