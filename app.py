@@ -116,7 +116,18 @@ with storage_tab:
         pivot_df = pivot_df.applymap(lambda x: f"{round(x / 1e6):,}" if pd.notna(x) else '')
 
         st.subheader("Edit or Correct Financial Data")
-        edited_df = st.data_editor(pivot_df, use_container_width=True, num_rows="dynamic")
+
+        def highlight_key_rows(val):
+            important = [
+                'Total Asset', 'Total Liabilities', 'Equity',
+                'Revenue', 'Total Operating Exp.', 'Operating Income', 'Net Income'
+            ]
+            if val.name in important:
+                return ['font-weight: bold; background-color: #f4e2d8'] * len(val)
+            return [''] * len(val)
+
+        styled_df = pivot_df.style.apply(highlight_key_rows, axis=1)
+        edited_df = st.data_editor(styled_df, use_container_width=True, num_rows="dynamic")
 
         if st.button("Save Changes"):
             for month_year in edited_df.columns:
