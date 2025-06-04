@@ -105,6 +105,7 @@ with input_tab:
 
 with storage_tab:
     st.header("Stored Financial Data (Editable)")
+    st.caption("*All values are displayed in millions (Rp. Mio)*")
     df = st.session_state['data']
     df_sorted = df.sort_values("Date")
     if df_sorted.empty:
