@@ -47,10 +47,15 @@ def load_data():
 def save_data(df):
     df.to_csv(csv_file, index=False)
 
-def delete_date(df, date):
-    ts = pd.Timestamp(date)
+def delete_date(df, label_str):
+    ts = pd.to_datetime(label_str, format='%b %Y')
+    month = ts.month
+    year = ts.year
+    # Recreate exact end-of-month date used in saving
+    last_day = calendar.monthrange(year, month)[1]
+    actual_date = pd.Timestamp(datetime.date(year, month, last_day))
     backup = df.copy()
-    df = df[df['Date'] != ts].reset_index(drop=True)
+    df = df[df['Date'] != actual_date].reset_index(drop=True)
     save_data(df)
     return df, backup
 
@@ -112,7 +117,7 @@ with storage_tab:
 
         delete_target = st.selectbox("Select a period to delete:", display_df.columns.tolist())
         if st.button("Delete Selected"):
-            df, backup = delete_date(df, pd.to_datetime(delete_target))
+            df, backup = delete_date(df, delete_target)
             st.session_state['data'] = df
             st.session_state['backup'] = backup
             st.session_state['undo_timer'] = time.time()
