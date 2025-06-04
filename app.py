@@ -59,6 +59,29 @@ def delete_date(df, date_str):
     df.to_csv(csv_file, index=False)
     return df
 
+st.markdown("""
+    <style>
+    /* Make tab menu sticky */
+    [data-testid="stTabs"] > div:first-child {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 100;
+        padding-top: 10px;
+    }
+    section.main > div:first-child h1 {
+        color: #002244;
+        font-weight: 800;
+        letter-spacing: -0.5px;
+    }
+    .stNumberInput input {
+        border: 1px solid #cccccc;
+        border-radius: 5px;
+        padding: 4px 8px;
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 st.title("Financial Dashboard")
 df = load_data()
 if 'data' not in st.session_state:
@@ -72,7 +95,7 @@ with t1:
         today = datetime.date.today()
         year = st.selectbox("Year", list(range(2000, today.year + 2)), index=list(range(2000, today.year + 2)).index(today.year))
         month = st.selectbox("Month", list(calendar.month_name)[1:], index=today.month - 1)
-        inputs = [st.number_input(f, value=0.0, format="%.2f") for f in ACCOUNT_FIELDS]
+        inputs = [st.number_input(f, value=0.0, format="%.2f", step=0.1) for f in ACCOUNT_FIELDS]
         if st.form_submit_button("Save"):
             last_day = calendar.monthrange(year, list(calendar.month_name)[1:].index(month) + 1)[1]
             date = datetime.date(year, list(calendar.month_name)[1:].index(month) + 1, last_day)
