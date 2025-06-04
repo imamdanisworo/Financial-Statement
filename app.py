@@ -6,6 +6,20 @@ import os
 import plotly.graph_objects as go
 import time
 
+st.markdown("""
+    <style>
+    .st-toast {
+        animation: fadeInOut 3s ease-in-out;
+    }
+    @keyframes fadeInOut {
+        0% {opacity: 0; transform: translateY(-10px);}
+        10% {opacity: 1; transform: translateY(0);}
+        90% {opacity: 1; transform: translateY(0);}
+        100% {opacity: 0; transform: translateY(-10px);}
+    }
+    </style>
+""", unsafe_allow_html=True)
+
 ACCOUNT_FIELDS = [
     'Current Asset', 'Non Current Asset', 'Total Asset',
     'Current Liabilities', 'Non Current Liabilities', 'Total Liabilities',
@@ -139,11 +153,12 @@ with storage_tab:
                 st.session_state['undo_timer'] = None
 
 if st.session_state.get('toast'):
-    st.success(st.session_state['toast'])
+    st.markdown(f"<div class='st-toast'><b>✅ {st.session_state['toast']}</b></div>", unsafe_allow_html=True)
     st.session_state['toast'] = None
 
 if st.session_state.get('rerun_flag'):
     st.session_state['rerun_flag'] = False
+    st.stop()
     st.experimental_rerun()
 
 with analysis_tab:
