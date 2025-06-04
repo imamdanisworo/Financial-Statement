@@ -17,10 +17,10 @@ ACCOUNT_FIELDS = [
 RATIO_FIELDS = {
     'Current Ratio': (lambda df: df['Current Asset'] / df['Current Liabilities'].replace(0, pd.NA), 'decimal'),
     'Debt to Equity Ratio': (lambda df: df['Total Liabilities'] / df['Equity'].replace(0, pd.NA), 'decimal'),
-    'Operating Profit Margin': (lambda df: df['Operating Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
-    'Net Profit Margin': (lambda df: df['Net Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
-    'Return on Assets (ROA)': (lambda df: df['Net Income'] / df['Total Asset'].replace(0, pd.NA), 'percent'),
-    'Return on Equity (ROE)': (lambda df: df['Net Income'] / df['Equity'].replace(0, pd.NA), 'percent')
+    'Operating Profit Margin (%)': (lambda df: df['Operating Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
+    'Net Profit Margin (%)': (lambda df: df['Net Income'] / df['Revenue'].replace(0, pd.NA), 'percent'),
+    'Return on Assets (ROA) (%)': (lambda df: df['Net Income'] / df['Total Asset'].replace(0, pd.NA), 'percent'),
+    'Return on Equity (ROE) (%)': (lambda df: df['Net Income'] / df['Equity'].replace(0, pd.NA), 'percent')
 }
 
 csv_file = os.path.join('data', 'financial_data.csv')
@@ -62,7 +62,7 @@ def delete_date(df, date_str):
 st.title("📊 Financial Dashboard")
 df = load_data()
 st.session_state['data'] = df
-t1, t2, t3 = st.tabs(["📅 Input", "📂 Storage", "📊 Analysis"])
+t1, t2, t3 = st.tabs(["🗕️ Input", "📂 Storage", "📊 Analysis"])
 
 with t1:
     st.header("Input Financial Data")
@@ -112,7 +112,7 @@ with t3:
                     hovertemplate=f"%{{x}}<br>{f}: Rp. %{{y:,.0f}} Mio<extra></extra>"
                 ))
             fig.update_layout(
-                title="Financial Trends(in Millions)",
+                title="Financial Trends (in Millions)",
                 xaxis_title="Month-Year",
                 yaxis=dict(tickformat=",.0f", tickprefix="Rp. "),
                 legend=dict(orientation="h", y=-0.3, x=0.5, xanchor="center")
@@ -125,7 +125,12 @@ with t3:
         ratio_df = pd.DataFrame(index=df.index)
         for name, (func, _) in RATIO_FIELDS.items():
             ratio_df[name] = func(df)
-        ratio_table = ratio_df.T
-        for name, (_, t) in RATIO_FIELDS.items():
-            ratio_table.loc[name] = ratio_table.loc[name].map(fmt_percent if t == 'percent' else fmt_decimal)
-        st.dataframe(ratio_table, use_container_width=True)
+
+        formatted_ratio_table = pd.DataFrame(index=RATIO_FIELDS.keys())
+        for name, (_, typ) in RATIO_FIELDS.items():
+            if typ == 'percent':
+                formatted_ratio_table.loc[name] = ratio_df[name].map(fmt_percent)
+            else:
+                formatted_ratio_table.loc[name] = ratio_df[name].map(fmt_decimal)
+
+        st.dataframe(formatted_ratio_table, use_container_width=True)
