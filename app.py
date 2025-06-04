@@ -51,7 +51,6 @@ def delete_date(df, label_str):
     ts = pd.to_datetime(label_str, format='%b %Y')
     month = ts.month
     year = ts.year
-    # Recreate exact end-of-month date used in saving
     last_day = calendar.monthrange(year, month)[1]
     actual_date = pd.Timestamp(datetime.date(year, month, last_day))
     backup = df.copy()
@@ -67,8 +66,11 @@ if 'backup' not in st.session_state:
     st.session_state['backup'] = None
 if 'undo_timer' not in st.session_state:
     st.session_state['undo_timer'] = None
+if 'rerun_flag' not in st.session_state:
+    st.session_state['rerun_flag'] = False
+if 'toast' not in st.session_state:
+    st.session_state['toast'] = None
 
-# Tabs
 input_tab, storage_tab, analysis_tab = st.tabs(["Input", "Storage", "Analysis"])
 
 with input_tab:
@@ -83,7 +85,6 @@ with input_tab:
             date = datetime.date(year, list(calendar.month_name)[1:].index(month) + 1, last_day)
             ts = pd.Timestamp(date)
             exists = (df['Date'] == ts).any()
-
             r = {'Date': ts}; r.update(dict(zip(ACCOUNT_FIELDS, inputs)))
 
             if exists:
@@ -93,16 +94,14 @@ with input_tab:
                     df = pd.concat([df, pd.DataFrame([r])], ignore_index=True)
                     save_data(df)
                     st.session_state['data'] = df
-                    st.success("Data overwritten.")
-                    st.experimental_rerun()
-                else:
-                    st.warning("Enable the checkbox to overwrite existing data.")
+                    st.session_state['toast'] = "Data overwritten successfully."
+                    st.session_state['rerun_flag'] = True
             else:
                 df = pd.concat([df, pd.DataFrame([r])], ignore_index=True)
                 save_data(df)
                 st.session_state['data'] = df
-                st.success("Data saved.")
-                st.experimental_rerun()
+                st.session_state['toast'] = "Data saved successfully."
+                st.session_state['rerun_flag'] = True
 
 with storage_tab:
     st.header("Stored Financial Data (in Millions)")
@@ -121,20 +120,31 @@ with storage_tab:
             st.session_state['data'] = df
             st.session_state['backup'] = backup
             st.session_state['undo_timer'] = time.time()
-            st.success(f"Data for {delete_target} has been deleted. You can undo within 10 seconds.")
+            st.session_state['toast'] = f"Data for {delete_target} deleted."
+            st.session_state['rerun_flag'] = True
 
         if st.session_state['backup'] is not None and st.session_state['undo_timer']:
-            if time.time() - st.session_state['undo_timer'] < 10:
+            remaining = 10 - (time.time() - st.session_state['undo_timer'])
+            if remaining > 0:
+                st.info(f"You can undo delete in {int(remaining)} seconds.")
                 if st.button("Undo Delete"):
                     st.session_state['data'] = st.session_state['backup']
                     save_data(st.session_state['backup'])
                     st.session_state['backup'] = None
                     st.session_state['undo_timer'] = None
-                    st.success("Deletion undone.")
-                    st.experimental_rerun()
+                    st.session_state['toast'] = "Deletion undone."
+                    st.session_state['rerun_flag'] = True
             else:
                 st.session_state['backup'] = None
                 st.session_state['undo_timer'] = None
+
+if st.session_state.get('toast'):
+    st.success(st.session_state['toast'])
+    st.session_state['toast'] = None
+
+if st.session_state.get('rerun_flag'):
+    st.session_state['rerun_flag'] = False
+    st.experimental_rerun()
 
 with analysis_tab:
     st.header("Financial Analysis")
