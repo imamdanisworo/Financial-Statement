@@ -59,10 +59,12 @@ def delete_date(df, date_str):
     df.to_csv(csv_file, index=False)
     return df
 
-st.title("📊 Financial Dashboard")
+st.title("\ud83d\udcca Financial Dashboard")
 df = load_data()
-st.session_state['data'] = df
-t1, t2, t3 = st.tabs(["🗕️ Input", "📂 Storage", "📊 Analysis"])
+if 'data' not in st.session_state:
+    st.session_state['data'] = df
+
+t1, t2, t3 = st.tabs(["\ud83d\udd55\ufe0f Input", "\ud83d\udcc2 Storage", "\ud83d\udcca Analysis"])
 
 with t1:
     st.header("Input Financial Data")
@@ -79,6 +81,7 @@ with t1:
 
 with t2:
     st.header("Stored Financial Data (in Millions)")
+    df = st.session_state['data']
     df_sorted = df.sort_values("Date")
     if df_sorted.empty:
         st.info("No data available.")
@@ -94,6 +97,7 @@ with t2:
 
 with t3:
     st.header("Financial Analysis")
+    df = st.session_state['data']
     if df.empty:
         st.info("No data to analyze.")
     else:
@@ -121,16 +125,16 @@ with t3:
             summary_table = (df[selected].T / 1e6).applymap(fmt)
             st.dataframe(summary_table, use_container_width=True)
 
-        st.subheader("📊 Financial Ratios")
+        st.subheader("\ud83d\udcca Financial Ratios")
         ratio_df = pd.DataFrame(index=df.index)
         for name, (func, _) in RATIO_FIELDS.items():
             ratio_df[name] = func(df)
 
-        formatted_ratio_table = pd.DataFrame(index=RATIO_FIELDS.keys())
+        formatted_ratio_df = pd.DataFrame(index=ratio_df.index)
         for name, (_, typ) in RATIO_FIELDS.items():
             if typ == 'percent':
-                formatted_ratio_table.loc[name] = ratio_df[name].map(fmt_percent)
+                formatted_ratio_df[name] = ratio_df[name].map(fmt_percent)
             else:
-                formatted_ratio_table.loc[name] = ratio_df[name].map(fmt_decimal)
+                formatted_ratio_df[name] = ratio_df[name].map(fmt_decimal)
 
-        st.dataframe(formatted_ratio_table, use_container_width=True)
+        st.dataframe(formatted_ratio_df.T, use_container_width=True)
