@@ -118,17 +118,32 @@ with input_tab:
                 st.session_state['rerun_flag'] = True
 
 with storage_tab:
-    st.header("Stored Financial Data (in Millions)")
+    st.header("Stored Financial Data (Editable)")
     df = st.session_state['data']
     df_sorted = df.sort_values("Date")
     if df_sorted.empty:
         st.info("No data available.")
     else:
-        df_sorted['Label'] = df_sorted['Date'].dt.strftime('%b %Y')
-        display_df = df_sorted.set_index('Label')[ACCOUNT_FIELDS].T / 1e6
-        st.dataframe(display_df.applymap(fmt), use_container_width=True)
+        df_sorted['Month-Year'] = df_sorted['Date'].dt.strftime('%b %Y')
+        editable_df = df_sorted[['Month-Year'] + ACCOUNT_FIELDS].copy()
+        editable_df.set_index('Month-Year', inplace=True)
 
-        delete_target = st.selectbox("Select a period to delete:", display_df.columns.tolist())
+        st.subheader("Edit or Correct Financial Data")
+        edited_df = st.data_editor(editable_df, use_container_width=True, num_rows="dynamic")
+
+        if st.button("Save Changes"):
+            for index in edited_df.index:
+                label = index
+                month_dt = pd.to_datetime(label, format="%b %Y")
+                last_day = calendar.monthrange(month_dt.year, month_dt.month)[1]
+                actual_date = pd.Timestamp(datetime.date(month_dt.year, month_dt.month, last_day))
+                for field in ACCOUNT_FIELDS:
+                    df.loc[df['Date'] == actual_date, field] = edited_df.loc[label, field]
+            save_data(df)
+            st.session_state['data'] = df
+            st.success("Changes saved successfully.")
+
+        delete_target = st.selectbox("Select a period to delete:", editable_df.index.tolist())
         if st.button("Delete Selected"):
             df, backup = delete_date(df, delete_target)
             st.session_state['data'] = df
