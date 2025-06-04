@@ -59,12 +59,12 @@ def delete_date(df, date_str):
     df.to_csv(csv_file, index=False)
     return df
 
-st.title("\ud83d\udcca Financial Dashboard")
+st.title("Financial Dashboard")
 df = load_data()
 if 'data' not in st.session_state:
     st.session_state['data'] = df
 
-t1, t2, t3 = st.tabs(["\ud83d\udd55\ufe0f Input", "\ud83d\udcc2 Storage", "\ud83d\udcca Analysis"])
+t1, t2, t3 = st.tabs(["Input", "Storage", "Analysis"])
 
 with t1:
     st.header("Input Financial Data")
@@ -125,7 +125,7 @@ with t3:
             summary_table = (df[selected].T / 1e6).applymap(fmt)
             st.dataframe(summary_table, use_container_width=True)
 
-        st.subheader("\ud83d\udcca Financial Ratios")
+        st.subheader("Financial Ratios")
         ratio_df = pd.DataFrame(index=df.index)
         for name, (func, _) in RATIO_FIELDS.items():
             ratio_df[name] = func(df)
