@@ -117,26 +117,26 @@ with storage_tab:
 
         st.subheader("Edit or Correct Financial Data")
 
-        def highlight_key_rows(val):
+        def highlight_key_rows(row):
             important = [
                 'Total Asset', 'Total Liabilities', 'Equity',
                 'Revenue', 'Total Operating Exp.', 'Operating Income', 'Net Income'
             ]
-            if val.name in important:
-                return ['font-weight: bold; background-color: #f4e2d8'] * len(val)
-            return [''] * len(val)
+            return ['font-weight: bold; background-color: #f4e2d8' if row.name in important else '' for _ in row]
 
         styled_df = pivot_df.style.apply(highlight_key_rows, axis=1)
-        edited_df = st.data_editor(styled_df, use_container_width=True, num_rows="dynamic")
+        st.dataframe(styled_df, use_container_width=True)
+
+        editable_df = st.data_editor(pivot_df, use_container_width=True, num_rows="dynamic")
 
         if st.button("Save Changes"):
-            for month_year in edited_df.columns:
+            for month_year in editable_df.columns:
                 dt = pd.to_datetime(month_year, format="%b %Y")
                 last_day = calendar.monthrange(dt.year, dt.month)[1]
                 actual_date = pd.Timestamp(datetime.date(dt.year, dt.month, last_day))
                 for field in ACCOUNT_FIELDS:
                     try:
-                        edited_val = float(str(edited_df.at[field, month_year]).replace(",", ""))
+                        edited_val = float(str(editable_df.at[field, month_year]).replace(",", ""))
                         df.loc[df['Date'] == actual_date, field] = edited_val * 1e6
                     except:
                         pass
