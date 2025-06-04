@@ -4,6 +4,7 @@ import datetime
 import calendar
 import os
 import plotly.graph_objects as go
+import time
 
 ACCOUNT_FIELDS = [
     'Current Asset', 'Non Current Asset', 'Total Asset',
@@ -43,53 +44,29 @@ def load_data():
         df[f] = pd.to_numeric(df[f], errors='coerce').fillna(0)
     return df
 
-def save_row(df, date, vals):
+def save_data(df):
+    df.to_csv(csv_file, index=False)
+
+def delete_date(df, date):
     ts = pd.Timestamp(date)
-    if (df['Date'] == ts).any():
-        st.warning(f"Data for {ts.date()} already exists and cannot be overwritten.")
-        return df
-    r = {'Date': ts}; r.update(dict(zip(ACCOUNT_FIELDS, vals)))
-    df = pd.concat([df, pd.DataFrame([r])], ignore_index=True)
-    df.to_csv(csv_file, index=False)
-    return df
-
-def delete_date(df, date_str):
-    ts = pd.Timestamp(date_str)
+    backup = df.copy()
     df = df[df['Date'] != ts].reset_index(drop=True)
-    df.to_csv(csv_file, index=False)
-    return df
-
-st.markdown("""
-    <style>
-    /* Make tab menu sticky */
-    [data-testid="stTabs"] > div:first-child {
-        position: sticky;
-        top: 0;
-        background: white;
-        z-index: 100;
-        padding-top: 10px;
-    }
-    section.main > div:first-child h1 {
-        color: #002244;
-        font-weight: 800;
-        letter-spacing: -0.5px;
-    }
-    .stNumberInput input {
-        border: 1px solid #cccccc;
-        border-radius: 5px;
-        padding: 4px 8px;
-    }
-    </style>
-""", unsafe_allow_html=True)
+    save_data(df)
+    return df, backup
 
 st.title("Financial Dashboard")
 df = load_data()
 if 'data' not in st.session_state:
     st.session_state['data'] = df
+if 'backup' not in st.session_state:
+    st.session_state['backup'] = None
+if 'undo_timer' not in st.session_state:
+    st.session_state['undo_timer'] = None
 
-t1, t2, t3 = st.tabs(["Input", "Storage", "Analysis"])
+# Tabs
+input_tab, storage_tab, analysis_tab = st.tabs(["Input", "Storage", "Analysis"])
 
-with t1:
+with input_tab:
     st.header("Input Financial Data")
     with st.form("input_form", clear_on_submit=True):
         today = datetime.date.today()
@@ -99,10 +76,30 @@ with t1:
         if st.form_submit_button("Save"):
             last_day = calendar.monthrange(year, list(calendar.month_name)[1:].index(month) + 1)[1]
             date = datetime.date(year, list(calendar.month_name)[1:].index(month) + 1, last_day)
-            df = save_row(df, date, inputs)
-            st.session_state['data'] = df
+            ts = pd.Timestamp(date)
+            exists = (df['Date'] == ts).any()
 
-with t2:
+            r = {'Date': ts}; r.update(dict(zip(ACCOUNT_FIELDS, inputs)))
+
+            if exists:
+                overwrite = st.checkbox(f"Data for {ts.strftime('%b %Y')} exists. Check to confirm overwrite.")
+                if overwrite:
+                    df = df[df['Date'] != ts]
+                    df = pd.concat([df, pd.DataFrame([r])], ignore_index=True)
+                    save_data(df)
+                    st.session_state['data'] = df
+                    st.success("Data overwritten.")
+                    st.experimental_rerun()
+                else:
+                    st.warning("Enable the checkbox to overwrite existing data.")
+            else:
+                df = pd.concat([df, pd.DataFrame([r])], ignore_index=True)
+                save_data(df)
+                st.session_state['data'] = df
+                st.success("Data saved.")
+                st.experimental_rerun()
+
+with storage_tab:
     st.header("Stored Financial Data (in Millions)")
     df = st.session_state['data']
     df_sorted = df.sort_values("Date")
@@ -112,13 +109,29 @@ with t2:
         df_sorted['Label'] = df_sorted['Date'].dt.strftime('%b %Y')
         display_df = df_sorted.set_index('Label')[ACCOUNT_FIELDS].T / 1e6
         st.dataframe(display_df.applymap(fmt), use_container_width=True)
-        for d in display_df.columns:
-            if st.button(f"Delete {d}", key=d):
-                df = delete_date(df, pd.to_datetime(d))
-                st.session_state['data'] = df
-                st.experimental_rerun()
 
-with t3:
+        delete_target = st.selectbox("Select a period to delete:", display_df.columns.tolist())
+        if st.button("Delete Selected"):
+            df, backup = delete_date(df, pd.to_datetime(delete_target))
+            st.session_state['data'] = df
+            st.session_state['backup'] = backup
+            st.session_state['undo_timer'] = time.time()
+            st.success(f"Data for {delete_target} has been deleted. You can undo within 10 seconds.")
+
+        if st.session_state['backup'] is not None and st.session_state['undo_timer']:
+            if time.time() - st.session_state['undo_timer'] < 10:
+                if st.button("Undo Delete"):
+                    st.session_state['data'] = st.session_state['backup']
+                    save_data(st.session_state['backup'])
+                    st.session_state['backup'] = None
+                    st.session_state['undo_timer'] = None
+                    st.success("Deletion undone.")
+                    st.experimental_rerun()
+            else:
+                st.session_state['backup'] = None
+                st.session_state['undo_timer'] = None
+
+with analysis_tab:
     st.header("Financial Analysis")
     df = st.session_state['data']
     if df.empty:
