@@ -6,20 +6,6 @@ import os
 import plotly.graph_objects as go
 import time
 
-st.markdown("""
-    <style>
-    .st-toast {
-        animation: fadeInOut 3s ease-in-out;
-    }
-    @keyframes fadeInOut {
-        0% {opacity: 0; transform: translateY(-10px);}
-        10% {opacity: 1; transform: translateY(0);}
-        90% {opacity: 1; transform: translateY(0);}
-        100% {opacity: 0; transform: translateY(-10px);}
-    }
-    </style>
-""", unsafe_allow_html=True)
-
 ACCOUNT_FIELDS = [
     'Current Asset', 'Non Current Asset', 'Total Asset',
     'Current Liabilities', 'Non Current Liabilities', 'Total Liabilities',
@@ -125,25 +111,28 @@ with storage_tab:
         st.info("No data available.")
     else:
         df_sorted['Month-Year'] = df_sorted['Date'].dt.strftime('%b %Y')
-        editable_df = df_sorted[['Month-Year'] + ACCOUNT_FIELDS].copy()
-        editable_df.set_index('Month-Year', inplace=True)
+        pivot_df = df_sorted.set_index('Month-Year')[ACCOUNT_FIELDS].T
+        pivot_df = pivot_df.applymap(lambda x: f"{round(x / 1e6):,}" if pd.notna(x) else '')
 
         st.subheader("Edit or Correct Financial Data")
-        edited_df = st.data_editor(editable_df, use_container_width=True, num_rows="dynamic")
+        edited_df = st.data_editor(pivot_df, use_container_width=True, num_rows="dynamic")
 
         if st.button("Save Changes"):
-            for index in edited_df.index:
-                label = index
-                month_dt = pd.to_datetime(label, format="%b %Y")
-                last_day = calendar.monthrange(month_dt.year, month_dt.month)[1]
-                actual_date = pd.Timestamp(datetime.date(month_dt.year, month_dt.month, last_day))
+            for month_year in edited_df.columns:
+                dt = pd.to_datetime(month_year, format="%b %Y")
+                last_day = calendar.monthrange(dt.year, dt.month)[1]
+                actual_date = pd.Timestamp(datetime.date(dt.year, dt.month, last_day))
                 for field in ACCOUNT_FIELDS:
-                    df.loc[df['Date'] == actual_date, field] = edited_df.loc[label, field]
+                    try:
+                        edited_val = float(str(edited_df.at[field, month_year]).replace(",", ""))
+                        df.loc[df['Date'] == actual_date, field] = edited_val * 1e6
+                    except:
+                        pass
             save_data(df)
             st.session_state['data'] = df
             st.success("Changes saved successfully.")
 
-        delete_target = st.selectbox("Select a period to delete:", editable_df.index.tolist())
+        delete_target = st.selectbox("Select a period to delete:", pivot_df.columns.tolist())
         if st.button("Delete Selected"):
             df, backup = delete_date(df, delete_target)
             st.session_state['data'] = df
@@ -168,7 +157,7 @@ with storage_tab:
                 st.session_state['undo_timer'] = None
 
 if st.session_state.get('toast'):
-    st.markdown(f"<div class='st-toast'><b>✅ {st.session_state['toast']}</b></div>", unsafe_allow_html=True)
+    st.success(st.session_state['toast'])
     st.session_state['toast'] = None
 
 if st.session_state.get('rerun_flag'):
