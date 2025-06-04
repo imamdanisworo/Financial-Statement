@@ -124,9 +124,7 @@ with storage_tab:
             ]
             return ['font-weight: bold; background-color: #f4e2d8' if row.name in important else '' for _ in row]
 
-        styled_df = pivot_df.style.apply(highlight_key_rows, axis=1)
-        st.dataframe(styled_df, use_container_width=True)
-
+        pivot_df_styled = pivot_df.style.apply(highlight_key_rows, axis=1)
         editable_df = st.data_editor(pivot_df, use_container_width=True, num_rows="dynamic")
 
         if st.button("Save Changes"):
