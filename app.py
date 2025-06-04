@@ -175,7 +175,7 @@ with analysis_tab:
         df['Label'] = df['Date'].dt.strftime('%b %Y')
         df.set_index('Label', inplace=True)
 
-        selected = st.multiselect("Select Fields to Plot", ACCOUNT_FIELDS, default=['Revenue', 'Net Income'])
+        selected = st.multiselect("Select Fields to Plot", ACCOUNT_FIELDS, default=[])
         if selected:
             fig = go.Figure()
             for f in selected:
